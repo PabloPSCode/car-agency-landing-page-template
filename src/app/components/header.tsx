@@ -80,7 +80,7 @@ export default function Header() {
           onClick={() => router.push("/")}
         >
           <Image
-            src="/logo.png"
+            src="/imgs/logo.png"
             alt="Logo da MonlevadeVeiculos"
             width={160}
             height={160}
