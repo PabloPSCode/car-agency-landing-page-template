@@ -10,8 +10,7 @@ import type {
 } from "react";
 import { forwardRef, useId } from "react";
 
-export interface SearchInputProps
-  extends InputHTMLAttributes<HTMLInputElement> {
+export interface SearchInputProps extends InputHTMLAttributes<HTMLInputElement> {
   /** Valor do estado da pesquisa */
   search: string;
   /** Função para atualizar o valor do estado da pesquisa */
@@ -42,7 +41,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
       variant = "secondary",
       ...rest
     }: SearchInputProps,
-    ref
+    ref,
   ) => {
     const reactId = useId();
     const inputId = id ?? `search-${reactId}`;
@@ -58,13 +57,12 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
       <div className={clsx("w-full", containerClassName)}>
         <div
           className={clsx(
-            "flex w-full items-center rounded-md bg-background text-foreground placeholder:text-foreground/50 text-sm sm:text-base border",
-            "border-gray-300 dark:border-gray-600",
+            "flex w-full items-center rounded-md  text-foreground placeholder:text-foreground/50 text-sm sm:text-base border-none",
             variant === "button-highlight"
               ? "pl-2 py-0 pr-0 sm:pr-1 my-1 h-10"
               : "pl-2",
             disabled && "opacity-70 cursor-not-allowed",
-            className
+            className,
           )}
         >
           {/* @ts-expect-error react versions incompatibility */}
@@ -96,14 +94,14 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
               className={clsx(
                 variant === "button-highlight"
                   ? "text-foreground text-lg sm:text-xl mr-2 bg-primary-500 p-1 rounded-md text-white scale-125"
-                  : "text-foreground/50 text-md sm:text-lg ml-2"
+                  : "text-foreground/50 text-md sm:text-lg ml-2",
               )}
             />
           )}
         </div>
       </div>
     );
-  }
+  },
 );
 
 SearchInput.displayName = "SearchInput";

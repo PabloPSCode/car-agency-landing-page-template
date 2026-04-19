@@ -8,6 +8,7 @@ export interface ICategory {
   name: string;
   slug: string;
   iconName?: string;
+  imageUrl?: string;
   createdAt?: ISODateString;
   updatedAt?: ISODateString;
 }
@@ -38,6 +39,23 @@ export interface IProduct {
   isPromotional?: boolean;
   featuredPosition?: number;
   shareUrl?: string;
+
+  // Automotive listing data
+  brand?: string;
+  bodyType?: string;
+  kmRodage?: number;
+  publishingDate?: ISODateString;
+  enginePower?: string;
+  gearType?: string;
+  yearModel?: string;
+  fuelType?: string;
+  color?: string;
+  city?: string;
+  location?: string;
+  oldPrice?: number;
+  vehicleImage?: string;
+  shortDescription?: string;
+  features?: string[];
 
   createdAt: ISODateString;
   updatedAt: ISODateString;
@@ -119,4 +137,68 @@ export interface StorePayload {
   categories: ICategory[];
   products: IProduct[];
   mediaItems: MediaImage[];
+  brandCategories: BrandCategory[];
+  bodyTypeCategories: BodyTypeCategory[];
+  cars: CarListing[];
+  heroBanners: HeroBanner[];
+}
+
+export type BodyTypeIconKey =
+  | "hatch"
+  | "sedan"
+  | "suv"
+  | "picape"
+  | "utilitario"
+  | "eletrico";
+
+export interface BrandCategory {
+  id: ID;
+  name: string;
+  slug: string;
+  logoUrl: string;
+}
+
+export interface BodyTypeCategory {
+  id: ID;
+  name: string;
+  slug: string;
+  iconKey: BodyTypeIconKey;
+  description: string;
+}
+
+export interface HeroBanner {
+  id: ID;
+  title: string;
+  subtitle: string;
+  badge: string;
+  imageUrl: string;
+  ctaLabel: string;
+  ctaHref: string;
+}
+
+export interface CarListing {
+  id: ID;
+  slug: string;
+  name: string;
+  brand: string;
+  bodyType: string;
+  price: number;
+  oldPrice?: number;
+  kmRodage: number;
+  publishingDate: ISODateString;
+  enginePower: string;
+  gearType: string;
+  vehicleImage: string;
+  gallery: string[];
+  yearModel: string;
+  fuelType: string;
+  color: string;
+  city: string;
+  location: string;
+  shortDescription: string;
+  description: string;
+  features: string[];
+  featured?: boolean;
+  badge?: string;
+  shareUrl?: string;
 }

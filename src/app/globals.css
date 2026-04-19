@@ -13,39 +13,50 @@
 @import "react-responsive-modal/styles.css";
 
 :root {
-  --color-primary-50: #fef3c7;
-  --color-primary-100: #fde68a;
-  --color-primary-200: #fcd34d;
-  --color-primary-300: #fbbf24;
-  --color-primary-400: #f59e0b;
-  --color-primary-500: #d97706;
-  --color-primary-600: #b45309;
-  --color-primary-700: #92400e;
-  --color-primary-800: #78350f;
-  --color-primary-900: #45141d;
-  --color-primary-950: #3b0e14;
+  --color-primary-50: #fff1f2;
+  --color-primary-100: #ffe1e3;
+  --color-primary-200: #ffc8cb;
+  --color-primary-300: #ffa3a8;
+  --color-primary-400: #f76e77;
+  --color-primary-500: #dd1f26;
+  --color-primary-600: #be151f;
+  --color-primary-700: #9f111b;
+  --color-primary-800: #781018;
+  --color-primary-900: #530d13;
+  --color-primary-950: #35080c;
 
-  --color-secondary-50: #fffdea;
-  --color-secondary-100: #fef9c3;
-  --color-secondary-200: #fef08a;
-  --color-secondary-300: #fde047;
-  --color-secondary-400: #facc15;
-  --color-secondary-500: #ffcc29;
-  --color-secondary-600: #e6b800;
-  --color-secondary-700: #cca300;
-  --color-secondary-800: #997a00;
-  --color-secondary-900: #665200;
-  --color-secondary-950: #332900;
+  --color-secondary-50: #eef6ff;
+  --color-secondary-100: #d8e9ff;
+  --color-secondary-200: #b9d8ff;
+  --color-secondary-300: #8cbfff;
+  --color-secondary-400: #559cf2;
+  --color-secondary-500: #2578d8;
+  --color-secondary-600: #0d65bf;
+  --color-secondary-700: #094f98;
+  --color-secondary-800: #083c70;
+  --color-secondary-900: #0a2847;
+  --color-secondary-950: #071b30;
 
-  --color-background: #f6f5f7;
-  --color-foreground: #1f1f1f;
+  --color-background: #eef2f6;
+  --color-foreground: #2c323d;
   --color-bg-card: #ffffff;
-  --color-border-card: #ffffff;
+  --color-border-card: #d8e1eb;
 
-  --font-primary: var(--font-montserrat), ui-sans-serif, system-ui,
+  --font-poppins: "Avenir Next", "Segoe UI", sans-serif;
+  --font-raleway: "Avenir Next", "Segoe UI", sans-serif;
+  --font-ubuntu: "Avenir Next", "Segoe UI", sans-serif;
+  --font-roboto: "Avenir Next", "Segoe UI", sans-serif;
+  --font-inter: "Avenir Next", "Segoe UI", sans-serif;
+  --font-work-sans: "Avenir Next", "Segoe UI", sans-serif;
+  --font-montserrat: "Avenir Next", "Segoe UI", sans-serif;
+  --font-josefin-sans: "Avenir Next", "Segoe UI", sans-serif;
+
+  --font-primary: var(--font-raleway), var(--font-montserrat), ui-sans-serif,
+    system-ui,
     -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
     "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
-  --font-secondary: var(--font-montserrat), ui-sans-serif, system-ui,
+  --font-secondary: var(--font-raleway), var(--font-montserrat),
+    ui-sans-serif, system-ui,
     -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
     "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
 }
@@ -69,6 +80,9 @@ html {
 body {
   color: var(--color-foreground);
   background: var(--color-background);
+  background-image:
+    radial-gradient(circle at top left, rgba(13, 101, 191, 0.08), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(221, 31, 38, 0.08), transparent 20%);
 }
 
 h1,
@@ -90,6 +104,10 @@ button {
 button:disabled {
   opacity: 0.5;
   cursor: auto;
+}
+
+::selection {
+  background: rgba(13, 101, 191, 0.18);
 }
 
 .react-datepicker__current-month,

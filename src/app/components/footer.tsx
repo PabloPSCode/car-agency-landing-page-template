@@ -1,123 +1,95 @@
 "use client";
+
+import Image from "next/image";
 import { Footer as FooterRC } from "../../libs/react-ultimate-components";
 import { useStore } from "../providers/StoreProvider";
+
 export default function Footer() {
-  const { storeData } = useStore();
-  const legalItems = [
-    {
-      href: "#",
-      label: "Política de Privacidade",
-    },
-    {
-      href: "#",
-      label: "Termos de Uso",
-    },
+  const { storeData, brandCategories } = useStore();
+  const footerYear = new Date().getFullYear();
+
+  const companyItems = [
+    { label: "Estoque com procedência checada" },
+    { label: "Avaliação justa na troca" },
+    { label: "Apoio no financiamento" },
   ];
 
   const supportItems = [
-    storeData.store.operation.mondayToFriday && {
-      label: `Seg–Sex: ${storeData.store.operation.mondayToFriday}`,
+    {
+      label: `Segunda a sexta: ${storeData.store.operation.mondayToFriday}`,
     },
-    storeData.store.operation.saturday && {
-      label: `Sáb: ${storeData.store.operation.saturday}`,
+    {
+      label: `Sábado: ${storeData.store.operation.saturday}`,
     },
-    storeData.store.operation.sunday && {
-      label: `Dom: ${storeData?.store?.operation?.sunday}`,
+    {
+      label: `Telefone: ${storeData.contact?.phone}`,
     },
-    storeData?.contact?.phone && {
-      label: `Telefone: ${storeData?.contact?.phone}`,
+    {
+      label: `WhatsApp: ${storeData.contact?.phone}`,
     },
-    storeData?.contact?.email && {
-      label: `Email: ${storeData?.contact?.email}`,
-    },
-  ].filter(Boolean) as { label: string }[];
+  ];
 
-  const deliveryItems = [
-    storeData?.store?.deliveryMethods?.pickOnStore
-      ? { label: "🫴🏼 Retire na loja" }
-      : null,
-    storeData.store.deliveryMethods.motoBoy
-      ? { label: "🛵 Entrega via motoboy" }
-      : null,
-    storeData.store.deliveryMethods.ownVehicle
-      ? { label: "🚗 Entrega via veículo próprio" }
-      : null,
-  ].filter(Boolean) as { label: string }[];
+  const addressItems = [
+    { label: storeData.address?.street ?? "" },
+    {
+      label: `${storeData.address?.city} - ${storeData.address?.state}`,
+    },
+    {
+      label: `CEP: ${storeData.address?.zipCode}`,
+    },
+    {
+      label: `E-mail: ${storeData.contact?.email}`,
+    },
+  ];
+
+  const brandItems = brandCategories.slice(0, 5).map((brand) => ({
+    label: brand.name,
+    href: `/pesquisa/estoque?marca=${brand.slug}`,
+  }));
 
   const socialItems = [
-    storeData?.social_medias?.instagram && {
+    storeData.social_medias?.instagram && {
       href: storeData.social_medias.instagram,
       iconName: "instagram",
     },
-    storeData?.social_medias?.facebook && {
+    storeData.social_medias?.facebook && {
       href: storeData.social_medias.facebook,
       iconName: "facebook",
     },
   ].filter(Boolean) as { href: string; iconName: "instagram" | "facebook" }[];
 
-  const cityState = [storeData?.address?.city, storeData?.address?.state]
-    .filter(Boolean)
-    .join(" - ");
-  const addressLine = [storeData?.address?.street, cityState]
-    .filter(Boolean)
-    .join(", ");
-
-  const addressText = storeData?.address?.zipCode
-    ? `${addressLine} — CEP: ${storeData.address.zipCode}`
-    : addressLine;
-
-  const footerYear = new Date().getFullYear();
-
   return (
-    <div className="bg-background text-foreground">
-      <FooterRC.Root bordered>
-        <FooterRC.Top columns={4}>
-          <FooterRC.Column
-            items={legalItems}
-            title="Legal"
-          />
-          <FooterRC.Column
-            items={supportItems}
-            title="Atendimento"
-          />
-          <FooterRC.Column
-            items={deliveryItems}
-            title="Forma de entrega"
-          />
-          <FooterRC.Column
-            items={[
-              {
-                imageUrl: "/lets_encrypt.png",
-                label: "",
-              },
-            ]}
-            title="Site seguro"
-          />
+    <div id="contato" className="bg-white text-foreground">
+      <FooterRC.Root bordered={false} className="bg-white text-foreground">
+        <FooterRC.Top columns={4} className="border-t-0">
+          <FooterRC.Column items={companyItems} title="MonlevadeVeiculos" />
+          <FooterRC.Column items={supportItems} title="Atendimento" />
+          <FooterRC.Column items={addressItems} title="Endereço" />
+          <FooterRC.Column items={brandItems} title="Marcas em destaque" />
         </FooterRC.Top>
+
         <FooterRC.SocialRow
-          title="Siga-nos nas redes sociais"
-          iconsClassName="text-foreground/80 hover:text-foreground"
-          iconsWeight="fill"
+          title="Acompanhe novidades e novas entradas"
           items={socialItems}
+          iconsClassName="text-foreground"
+          className="border-y border-foreground/10 bg-secondary-50/50"
         />
-        <FooterRC.Bottom>
-          <div className="flex flex-col gap-4 mb-4">
-            <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-              <p>
-                © {footerYear} {storeData?.store?.name} — CNPJ:{" "}
-                {storeData?.legal?.cnpj}
-              </p>
-              <p className="text-foreground/70">{addressText}</p>
-            </div>
-            <p className="text-foreground/70 text-xs opacity-80">
+
+        <FooterRC.Bottom className="text-foreground/80">
+          <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-center">
+              © {footerYear} {storeData.store.name}. CNPJ{" "}
+              {storeData.legal?.cnpj}
+            </p>
+            <p className="text-xs text-center flex items-center gap-2">
               Desenvolvido por{" "}
-              <a
-                href="https://pablosilvadev.com.br"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 text-xs"
-              >
-                Pablo Silva Dev
+              <a href="https://www.plssistemas.com.br" target="_blank" rel="noopener noreferrer">
+              <Image
+                src="/imgs/logo_pls.png"
+                alt="PLS Sistemas"
+                width={100}
+                height={100}
+              />
               </a>
             </p>
           </div>

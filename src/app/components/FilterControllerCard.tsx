@@ -3,29 +3,36 @@
 import clsx from "clsx";
 import { Checkbox, IntervalSliderInput } from "react-ultimate-components";
 import { formatBRL } from "../../libs/react-ultimate-components/src/utils/format";
-import type { ICategory } from "../../types";
+import type { BodyTypeCategory, BrandCategory } from "../../types";
+import { Subtitle, Title } from "./ui/Typography";
 
 type PriceRange = [number, number];
 
 export interface FilterControllerCardProps {
-  categories: ICategory[];
-  selectedCategoryIds: string[];
+  brandCategories: BrandCategory[];
+  bodyTypeCategories: BodyTypeCategory[];
+  selectedBrandSlugs: string[];
+  selectedBodyTypeSlugs: string[];
   priceRange: PriceRange;
   minPrice: number;
   maxPrice: number;
-  onToggleCategory: (categoryId: string) => void;
+  onToggleBrand: (brandSlug: string) => void;
+  onToggleBodyType: (bodyTypeSlug: string) => void;
   onPriceChange: (values: PriceRange) => void;
   onResetFilters: () => void;
   className?: string;
 }
 
 export default function FilterControllerCard({
-  categories,
-  selectedCategoryIds,
+  brandCategories,
+  bodyTypeCategories,
+  selectedBrandSlugs,
+  selectedBodyTypeSlugs,
   priceRange,
   minPrice,
   maxPrice,
-  onToggleCategory,
+  onToggleBrand,
+  onToggleBodyType,
   onPriceChange,
   onResetFilters,
   className,
@@ -33,74 +40,76 @@ export default function FilterControllerCard({
   return (
     <div
       className={clsx(
-        "filter-controller-container Container",
-        "flex w-full flex-col gap-5 rounded-2xl border border-border-card bg-bg-card p-4 sm:p-5 text-foreground shadow-sm",
+        "flex w-full flex-col gap-6 rounded-[28px] border border-border-card bg-bg-card p-5 text-foreground shadow-sm",
         className
       )}
     >
-      <button
-        type="button"
-        onClick={onResetFilters}
-        className={clsx(
-          "filter-controller-reset-button ResetFilterButton",
-          "w-fit text-xs sm:text-sm font-semibold text-foreground/70 hover:text-foreground transition"
-        )}
-      >
-        Limpar todos os filtros
-      </button>
+      <div className="flex items-center justify-between gap-3">
+        <Title as="div" size="md" className="text-xl">
+          Filtros
+        </Title>
+        <button
+          type="button"
+          onClick={onResetFilters}
+          className="text-sm font-semibold text-secondary-700 transition hover:opacity-80"
+        >
+          Limpar
+        </button>
+      </div>
 
-      <div
-        className={clsx(
-          "filter-controller-section FilterControllerSection",
-          "filter-controller-section-categories",
-          "flex flex-col gap-3"
-        )}
-      >
-        <div className="filter-controller-section-header flex flex-col gap-2">
-          <h3 className="filter-controller-section-title FilterControllerSectionTitle text-sm sm:text-base font-bold uppercase tracking-wide">
-            Categoria
-          </h3>
-          <span className="filter-controller-section-divider h-px w-full bg-foreground/10" />
-        </div>
+      <div className="flex flex-col gap-3">
+        <Title as="div" size="md" className="text-lg">
+          Marca
+        </Title>
+        <Subtitle as="div" className="text-sm">
+          Refine o estoque pelas marcas que você quer comparar.
+        </Subtitle>
 
-        <div className="filter-controller-section-content flex flex-col gap-2">
-          {categories.map((category) => {
-            const categoryId = category.id ?? category.name;
-            return (
-              <div
-                key={categoryId}
-                className="filter-controller-category-item"
-              >
-                <Checkbox
-                  checked={selectedCategoryIds.includes(categoryId)}
-                  onChange={() => onToggleCategory(categoryId)}
-                  helperText={category.name}
-                />
-              </div>
-            );
-          })}
+        <div className="flex flex-col gap-2">
+          {brandCategories.map((brand) => (
+            <Checkbox
+              key={brand.slug}
+              checked={selectedBrandSlugs.includes(brand.slug)}
+              onChange={() => onToggleBrand(brand.slug)}
+              helperText={brand.name}
+            />
+          ))}
         </div>
       </div>
 
-      <div
-        className={clsx(
-          "filter-controller-section FilterControllerSection",
-          "filter-controller-section-price",
-          "flex flex-col gap-3"
-        )}
-      >
-        <div className="filter-controller-section-header flex flex-col gap-2">
-          <h3 className="filter-controller-section-title FilterControllerSectionTitle text-sm sm:text-base font-bold uppercase tracking-wide">
-            Preco
-          </h3>
-          <span className="filter-controller-section-divider h-px w-full bg-foreground/10" />
-        </div>
+      <div className="h-px w-full bg-foreground/10" />
 
+      <div className="flex flex-col gap-3">
+        <Title as="div" size="md" className="text-lg">
+          Carroceria
+        </Title>
+        <Subtitle as="div" className="text-sm">
+          Selecione o tipo de chassi que mais combina com o uso previsto.
+        </Subtitle>
+
+        <div className="flex flex-col gap-2">
+          {bodyTypeCategories.map((bodyType) => (
+            <Checkbox
+              key={bodyType.slug}
+              checked={selectedBodyTypeSlugs.includes(bodyType.slug)}
+              onChange={() => onToggleBodyType(bodyType.slug)}
+              helperText={bodyType.name}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="h-px w-full bg-foreground/10" />
+
+      <div className="flex flex-col gap-4">
+        <Title as="div" size="md" className="text-lg">
+          Faixa de preço
+        </Title>
         <IntervalSliderInput
-          label="Faixa de preco"
+          label="Quanto você quer investir"
           minValue={minPrice}
           maxValue={maxPrice}
-          stepValue={1}
+          stepValue={1000}
           values={priceRange}
           onChange={onPriceChange}
           formatValue={formatBRL}

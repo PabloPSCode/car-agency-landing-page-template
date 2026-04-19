@@ -1,181 +1,297 @@
 "use client";
-import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { ProductCard, TopMenu } from "react-ultimate-components";
+
+import {
+  CalendarIcon,
+  GaugeIcon,
+  GearSixIcon,
+} from "@phosphor-icons/react";
 import Breadcrumb from "react-ultimate-components/src/components/navigation/BreadCrumb/index.tsx";
-import { sendMessageWhatsapp } from "../../../utils/helpers.ts";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import type { ComponentType } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ProductCard, SearchInput } from "react-ultimate-components";
 import FilterControllerCard from "../../components/FilterControllerCard";
-import { buildTopMenuItems } from "../../constants/home.tsx";
+import {
+  MobileMenuToggleButton,
+  MobilePanel,
+} from "../../components/mobile/MobilePanel";
+import {
+  FadeContainer,
+  RevealContainer,
+} from "../../components/ui/Animations";
+import { Section } from "../../components/ui/Section";
+import { Subtitle, Title } from "../../components/ui/Typography";
 import { useStore } from "../../providers/StoreProvider";
+import {
+  formatKmRodage,
+  formatPublishingDate,
+  slugify,
+} from "../../../utils/car";
+import { sendMessageWhatsapp } from "../../../utils/helpers";
 
 type PriceRange = [number, number];
+const SearchField = SearchInput as unknown as ComponentType<any>;
 
-export default function Home() {
-  const { categories, products } = useStore();
+export default function SearchPage() {
+  const router = useRouter();
   const pathname = usePathname();
-  const normalizedPathname =
-    pathname.replace(/^\/sites\/[^/]+/, "") || "/";
-  const currentPath = normalizedPathname;
-  const topMenuItems = buildTopMenuItems(categories);
-
   const searchParams = useSearchParams();
-  const query = searchParams.get("search")?.trim() ?? "";
-  const [searchTerm, setSearchTerm] = useState(query);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [queryCategoryId, setQueryCategoryId] = useState<string | null>(null);
+  const { brandCategories, bodyTypeCategories, cars, storeData } = useStore();
+  const whatsapp = storeData.contact?.whatsapp ?? "5531998710044";
+  const normalizedPathname = pathname.replace(/^\/sites\/[^/]+/, "") || pathname;
 
-  const MIN_SEARCH_LENGTH = 3;
+  const initialSearch = searchParams.get("search")?.trim() ?? "";
+  const initialBrand = searchParams.get("marca")?.trim() ?? "";
+  const initialBodyType = searchParams.get("carroceria")?.trim() ?? "";
+
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
+  const [selectedBrandSlugs, setSelectedBrandSlugs] = useState<string[]>(
+    initialBrand ? [initialBrand] : []
+  );
+  const [selectedBodyTypeSlugs, setSelectedBodyTypeSlugs] = useState<string[]>(
+    initialBodyType ? [initialBodyType] : []
+  );
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const priceBounds = useMemo<PriceRange>(() => {
-    if (!products.length) return [0, 0];
-    const prices = products.map((product) => product.priceCents / 100);
+    if (!cars.length) return [0, 0];
+    const prices = cars.map((car) => car.price);
     return [Math.floor(Math.min(...prices)), Math.ceil(Math.max(...prices))];
-  }, [products]);
+  }, [cars]);
 
   const [priceRange, setPriceRange] = useState<PriceRange>(priceBounds);
-  const [minPrice, maxPrice] = priceBounds;
 
   useEffect(() => {
-    setSearchTerm(query);
-  }, [query]);
+    setSearchTerm(initialSearch);
+  }, [initialSearch]);
 
   useEffect(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) {
-      setQueryCategoryId(null);
-      setSelectedCategories([]);
-      return;
+    setSelectedBrandSlugs(initialBrand ? [initialBrand] : []);
+  }, [initialBrand]);
+
+  useEffect(() => {
+    setSelectedBodyTypeSlugs(initialBodyType ? [initialBodyType] : []);
+  }, [initialBodyType]);
+
+  useEffect(() => {
+    setPriceRange(priceBounds);
+  }, [priceBounds]);
+
+  const filteredCars = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return cars.filter((car) => {
+      const matchesSearch =
+        !normalizedSearch ||
+        [
+          car.name,
+          car.brand,
+          car.bodyType,
+          car.shortDescription,
+          car.description,
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedSearch);
+
+      const matchesBrand =
+        !selectedBrandSlugs.length ||
+        selectedBrandSlugs.includes(slugify(car.brand));
+      const matchesBodyType =
+        !selectedBodyTypeSlugs.length ||
+        selectedBodyTypeSlugs.includes(slugify(car.bodyType));
+      const matchesPrice =
+        car.price >= priceRange[0] && car.price <= priceRange[1];
+
+      return matchesSearch && matchesBrand && matchesBodyType && matchesPrice;
+    });
+  }, [cars, priceRange, searchTerm, selectedBodyTypeSlugs, selectedBrandSlugs]);
+
+  const handleSearchSubmit = () => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (searchTerm.trim()) {
+      params.set("search", searchTerm.trim());
+    } else {
+      params.delete("search");
     }
 
-    const matchedCategory = categories.find((category) => {
-      const name = category.name.toLowerCase();
-      const slug = category.slug.toLowerCase();
-      return name === normalizedQuery || slug === normalizedQuery;
-    });
+    const queryString = params.toString();
+    router.push(
+      queryString ? `/pesquisa/estoque?${queryString}` : "/pesquisa/estoque"
+    );
+  };
 
-    const matchedId = matchedCategory?.id ?? null;
-    setQueryCategoryId(matchedId);
-    setSelectedCategories(matchedId ? [matchedId] : []);
-  }, [categories, query]);
+  const handleToggleBrand = (brandSlug: string) => {
+    setSelectedBrandSlugs((previous) =>
+      previous.includes(brandSlug)
+        ? previous.filter((item) => item !== brandSlug)
+        : [...previous, brandSlug]
+    );
+  };
 
-  useEffect(() => {
-    setPriceRange([minPrice, maxPrice]);
-  }, [minPrice, maxPrice]);
-
-  const handleToggleCategory = (categoryId: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId]
+  const handleToggleBodyType = (bodyTypeSlug: string) => {
+    setSelectedBodyTypeSlugs((previous) =>
+      previous.includes(bodyTypeSlug)
+        ? previous.filter((item) => item !== bodyTypeSlug)
+        : [...previous, bodyTypeSlug]
     );
   };
 
   const handleResetFilters = () => {
     setSearchTerm("");
-    setSelectedCategories([]);
-    setQueryCategoryId(null);
-    setPriceRange([minPrice, maxPrice]);
+    setSelectedBrandSlugs([]);
+    setSelectedBodyTypeSlugs([]);
+    setPriceRange(priceBounds);
+    router.push("/pesquisa/estoque");
   };
 
-  useEffect(() => {
-    console.log(selectedCategories);
-    console.log(priceRange);
-  }, [selectedCategories, priceRange]);
-
-  const filteredProducts = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    const hasSearch =
-      normalizedSearch.length >= MIN_SEARCH_LENGTH && !queryCategoryId;
-    const selectedCategorySet = new Set(selectedCategories);
-
-    return products.filter((product) => {
-      const productPrice = product.priceCents / 100;
-      const matchesPrice =
-        productPrice >= priceRange[0] && productPrice <= priceRange[1];
-      const matchesCategory =
-        selectedCategorySet.size === 0 ||
-        (product.categoryId && selectedCategorySet.has(product.categoryId));
-      const matchesSearch =
-        !hasSearch ||
-        product.name.toLowerCase().includes(normalizedSearch) ||
-        product.description?.toLowerCase().includes(normalizedSearch);
-
-      return matchesPrice && matchesCategory && matchesSearch;
-    });
-  }, [
-    priceRange,
-    queryCategoryId,
-    searchTerm,
-    selectedCategories,
-    products,
-  ]);
-
   return (
-    <main className="w-full bg-background text-foreground">
-      {/* Top categories */}
-      <div className="w-screen bg-gray-100 dark:bg-gray-900 px-2">
-        <TopMenu
-          menuItems={topMenuItems}
-          className="w-full bg-gray-100 dark:bg-gray-900 text-background"
-          itemClassName="text-sm font-semibold text-foreground hover:text-foreground"
-        />
-      </div>
+    <main className="min-h-screen bg-background text-foreground">
+      <Section className="">
+        <div className="mb-8 grid gap-5">
+          <RevealContainer once>
+            <Breadcrumb
+              currentPath={normalizedPathname}
+              rootLabel="Início"
+              labelMap={{
+                pesquisa: "Estoque",
+                estoque: "Todos os veículos",
+              }}
+              className="-mt-8"
+            />
+          </RevealContainer>
 
-      <div className="max-w-7xl flex flex-col mx-auto items-start px-4 pt-6 pb-10 gap-2 text-foreground">
-        <div className=" w-full  flex items-center gap-2 mx-auto text-sm">
-          <span className="min-w-[120px] line-clamp-1 font-semibold">
-            Você está em:
-          </span>
-          <Breadcrumb currentPath={currentPath} />
+          <RevealContainer once delay={80}>
+            <div className="grid gap-3">
+              <Title as="div" size="xl">
+                Veículos seminovos com procedência
+              </Title>
+              <Subtitle as="div">
+                Exibindo {filteredCars.length} veículos filtrados por busca, preço,
+                marca e carroceria.
+              </Subtitle>
+            </div>
+          </RevealContainer>
+
+          <FadeContainer once delay={120}>
+            <form
+              className="w-full rounded-[28px] border border-border-card bg-bg-card p-4 shadow-sm"
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleSearchSubmit();
+              }}
+            >
+              <SearchField
+                search={searchTerm}
+                setSearch={setSearchTerm}
+                placeholder="Busca rápida por marca, modelo ou carroceria"
+                variant="secondary"
+              />
+            </form>
+          </FadeContainer>
         </div>
-        <span className="text-sm mt-4">
-          Resultados encontrados para a busca: {searchTerm || "Todos"}
-        </span>
-      </div>
 
-      <section className="max-w-7xl bg-background grid grid-cols-1 lg:grid-cols-4 mx-auto gap-4 px-4 pb-16">
-        <div className="lg:col-span-1">
-          <FilterControllerCard
-            categories={categories}
-            selectedCategoryIds={selectedCategories}
-            priceRange={priceRange}
-            minPrice={minPrice}
-            maxPrice={maxPrice}
-            onToggleCategory={handleToggleCategory}
-            onPriceChange={setPriceRange}
-            onResetFilters={handleResetFilters}
+        <div className="mb-5 md:hidden">
+          <MobileMenuToggleButton
+            open={showMobileFilters}
+            onToggle={(open) => setShowMobileFilters(open)}
           />
         </div>
-        <div className="lg:col-span-3 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProducts.length > 0 ? (
-            filteredProducts.map((product) => {
-              return (
-                <ProductCard
-                  key={product.id}
-                  imageUrl={product.coverImageUrl ?? product.imageUrls[0]}
-                  title={product.name}
-                  price={product.priceCents / 100}
-                  installments={10}
-                  installmentValue={(product.priceCents ?? 0) / 1000}
-                  ctaLabel="Tenho interesse"
-                  shareLabel="Compartilhar"
-                  className="h-full"
-                  onAddToCart={() =>
-                    sendMessageWhatsapp(
-                      `Olá, tenho interesse no produto ${product.name} (Código: ${product.id}).`,
-                      "5531985187963"
-                    )
-                  }
+
+        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <div className="hidden lg:block lg:sticky lg:top-28 lg:self-start">
+            <FilterControllerCard
+              brandCategories={brandCategories}
+              bodyTypeCategories={bodyTypeCategories}
+              selectedBrandSlugs={selectedBrandSlugs}
+              selectedBodyTypeSlugs={selectedBodyTypeSlugs}
+              priceRange={priceRange}
+              minPrice={priceBounds[0]}
+              maxPrice={priceBounds[1]}
+              onToggleBrand={handleToggleBrand}
+              onToggleBodyType={handleToggleBodyType}
+              onPriceChange={setPriceRange}
+              onResetFilters={handleResetFilters}
+            />
+          </div>
+
+          <div className="grid gap-6">
+            <div className="md:hidden">
+              <MobilePanel open={showMobileFilters}>
+                <FilterControllerCard
+                  brandCategories={brandCategories}
+                  bodyTypeCategories={bodyTypeCategories}
+                  selectedBrandSlugs={selectedBrandSlugs}
+                  selectedBodyTypeSlugs={selectedBodyTypeSlugs}
+                  priceRange={priceRange}
+                  minPrice={priceBounds[0]}
+                  maxPrice={priceBounds[1]}
+                  onToggleBrand={handleToggleBrand}
+                  onToggleBodyType={handleToggleBodyType}
+                  onPriceChange={setPriceRange}
+                  onResetFilters={handleResetFilters}
                 />
-              );
-            })
-          ) : (
-            <span className="text-foreground/70 p-4 col-span-full">
-              Nenhum produto encontrado para os filtros aplicados.
-            </span>
-          )}
+              </MobilePanel>
+            </div>
+
+            {filteredCars.length ? (
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {filteredCars.map((car, index) => (
+                  <FadeContainer key={car.id} once delay={index * 45}>
+                    <ProductCard
+                      productId={car.id}
+                      variant="vehicle"
+                      imageUrl={car.vehicleImage}
+                      title={car.name}
+                      subtitle={`Publicado em ${formatPublishingDate(
+                        car.publishingDate
+                      )}`}
+                      location={car.city}
+                      price={car.price}
+                      oldPrice={car.oldPrice}
+                      tag={car.badge}
+                      metaItems={[
+                        {
+                          icon: <GaugeIcon size={18} weight="duotone" />,
+                          label: formatKmRodage(car.kmRodage),
+                        },
+                        {
+                          icon: <CalendarIcon size={18} weight="duotone" />,
+                          label: car.yearModel,
+                        },
+                        {
+                          icon: <GearSixIcon size={18} weight="duotone" />,
+                          label: car.gearType,
+                        },
+                      ]}
+                      ctaLabel="Ver mais informações"
+                      onAddToCart={() => router.push(`/produto/${car.slug}`)}
+                      onSeeProductDetails={() => router.push(`/produto/${car.slug}`)}
+                      onShare={() =>
+                        sendMessageWhatsapp(
+                          `Olá! Quero detalhes do veículo ${car.name}.`,
+                          whatsapp
+                        )
+                      }
+                    />
+                  </FadeContainer>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-[28px] border border-border-card bg-bg-card p-8 text-center shadow-sm">
+                <Title as="div" size="md" className="mb-3">
+                  Nenhum veículo encontrado
+                </Title>
+                <Subtitle as="div">
+                  Ajuste os filtros ou limpe a pesquisa para ver novamente o
+                  estoque completo.
+                </Subtitle>
+              </div>
+            )}
+          </div>
         </div>
-      </section>
+      </Section>
     </main>
   );
 }

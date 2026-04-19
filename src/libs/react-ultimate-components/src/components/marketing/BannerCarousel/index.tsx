@@ -158,9 +158,9 @@ export default function BannerCarousel({
           className="w-full"
         >
           {items.map((it, i) => (
-            <SwiperSlide key={i} className="min-h-[60vh]">
+            <SwiperSlide key={i} className="min-h-[70vh]">
               {/* Slide wrapper follows your theme tokens */}
-              <div className="w-full h-full bg-card text-card-foreground overflow-hidden">
+              <div className="h-full min-h-[70vh] w-full overflow-hidden bg-card text-card-foreground">
                 {it}
               </div>
             </SwiperSlide>

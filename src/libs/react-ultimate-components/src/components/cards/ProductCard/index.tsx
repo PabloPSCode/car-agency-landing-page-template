@@ -1,261 +1,238 @@
 "use client";
 
-import { ShareNetworkIcon, StarIcon, TimerIcon } from "@phosphor-icons/react";
+import {
+  CalendarIcon,
+  GaugeIcon,
+  GearSixIcon,
+  MapPinIcon,
+  ShareNetworkIcon,
+  StarIcon,
+} from "@phosphor-icons/react";
 import clsx from "clsx";
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { getDefaultDate } from "../../../../../../utils/format";
 import { formatBRL } from "../../../utils/format";
 
 type Rating = 0 | 1 | 2 | 3 | 4 | 5;
 
-interface ProductCardProps {
-  /** URL da imagem do produto. */
-  imageUrl: string;
-  /** Título do produto. */
-  title: string;
-  /** Preço do produto (valor numérico). */
-  price: number;
-  /** Avaliação do produto (0 a 5). */
-  rating?: Rating;
-  /** Quantidade de parcelas (opcional). */
-  installments?: number;
-  /** Valor de cada parcela (opcional). */
-  installmentValue?: number;
-  /** Rótulo do botão (ex.: “Adicionar ao carrinho”). */
-  ctaLabel?: string;
-  /** Rótulo do botão secundário */
-  shareLabel?: string;
-  /** Classe opcional aplicada ao cartão */
-  className?: string;
-  /** Callback ao clicar no botão de ação. */
-  onAddToCart?: () => void;
-  /** Callback ao clicar no botão de compartilhar. */
-  onShare?: () => void;
-  /** Callback ao ver os detalhes do produto. */
-  onSeeProductDetails?: (productId?: string) => void;
-
-  /**
-   * Se deve mostrar a promoção (deal).
-   * Quando `true`, o card exibe preço promocional e um contador regressivo.
-   */
-  showDeal?: boolean;
-
-  /** Preço da promoção. Quando não informado, usa `price` como fallback. */
-  dealPrice?: number;
-
-  /**
-   * Horário (ISO string) em que a promoção termina.
-   * - **Padrão:** 24 horas a partir do primeiro render.
-   * - Ex.: "2025-12-31T23:59:59.000Z"
-   */
-  dealEndsWithIn?: string;
+export interface ProductMetaItem {
+  icon?: unknown;
+  label: string;
 }
 
-/**
- * Card de produto para listagens em e-commerce.
- * - **Responsivo:** tipografia, imagem e botões adaptam por breakpoint.
- * - **Acessível:** `alt` na imagem, labels ARIA e botão com foco visível.
- * - **Promoção com contador:** se `showDeal` for `true`, exibe preço promocional e um contador que
- *   por padrão encerra em 24 horas (ou no horário definido em `dealEndsWithIn`).
- */
+interface ProductCardProps {
+  imageUrl: string;
+  title: string;
+  price: number;
+  rating?: Rating;
+  installments?: number;
+  installmentValue?: number;
+  ctaLabel?: string;
+  shareLabel?: string;
+  className?: string;
+  onAddToCart?: () => void;
+  onShare?: () => void;
+  onFavorite?: () => void;
+  onSeeProductDetails?: (productId?: string) => void;
+  showDeal?: boolean;
+  dealPrice?: number;
+  dealEndsWithIn?: string;
+  variant?: "default" | "vehicle";
+  subtitle?: string;
+  location?: string;
+  metaItems?: ProductMetaItem[];
+  oldPrice?: number;
+  tag?: string;
+  imageAlt?: string;
+  buttonVariant?: "primary" | "outlined";
+  ctaClassName?: string;
+  productId?: string;
+}
+
 export default function ProductCard({
   imageUrl,
   title,
   price,
-  rating,
   installments,
   installmentValue,
-  ctaLabel = "Tenho interesse",
-  shareLabel = "Compartilhar",
+  ctaLabel = "Ver mais informações",
+  shareLabel,
   onAddToCart,
   onShare,
+  onFavorite,
   onSeeProductDetails,
   showDeal,
   dealPrice,
-  dealEndsWithIn,
   className,
+  variant = "default",
+  subtitle,
+  location,
+  metaItems,
+  oldPrice,
+  tag,
+  imageAlt,
+  buttonVariant = "outlined",
+  ctaClassName,
+  productId,
 }: ProductCardProps) {
-  const formattedBasePrice = formatBRL(price);
-  const effectiveDealPrice = dealPrice ?? price;
-  const formattedDealPrice = formatBRL(effectiveDealPrice);
-
-  const defaultEnd = useMemo(() => {
-    return getDefaultDate();
-  }, []);
-
-  const dealEndsAt = useMemo<Date>(() => {
-    if (!showDeal) return defaultEnd;
-    if (!dealEndsWithIn) return defaultEnd;
-    const parsed = new Date(dealEndsWithIn);
-    return isNaN(parsed.getTime()) ? defaultEnd : parsed;
-  }, [dealEndsWithIn, defaultEnd, showDeal]);
-
-  const [remainingMs, setRemainingMs] = useState<number>(
-    Math.max(0, dealEndsAt.getTime() - Date.now())
-  );
-  const intervalRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (!showDeal) return;
-    setRemainingMs(Math.max(0, dealEndsAt.getTime() - Date.now()));
-
-    intervalRef.current = window.setInterval(() => {
-      setRemainingMs(() => {
-        const next = Math.max(0, dealEndsAt.getTime() - Date.now());
-        return next;
-      });
-    }, 1000);
-
-    return () => {
-      if (intervalRef.current) {
-        window.clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [dealEndsAt, showDeal]);
-
-  const dealExpired = showDeal ? remainingMs <= 0 : false;
-
-  // === Estrelas de avaliação ===
-  const renderStars = (value: Rating) => {
-    const stars = Array.from({ length: 5 }, (_, i) => i < value);
-    return (
-      <div
-        className="flex items-center gap-1 text-base sm:text-lg"
-        aria-label={`Avaliação ${value} de 5`}
-      >
-        {stars.map((filled, i) => (
-          <StarIcon
-            key={i}
-            size="1em"
-            weight={filled ? "fill" : "regular"}
-            className={filled ? "text-yellow-400" : "text-foreground/30"}
-          />
-        ))}
-      </div>
-    );
-  };
+  const currentPrice = dealPrice ?? price;
+  const comparePrice = oldPrice ?? (showDeal && currentPrice < price ? price : undefined);
+  const formattedPrice = formatBRL(currentPrice);
+  const formattedComparePrice =
+    typeof comparePrice === "number" && comparePrice > currentPrice
+      ? formatBRL(comparePrice)
+      : null;
 
   return (
-    <div
+    <article
       className={clsx(
-        "group flex flex-col rounded-2xl border border-border-card bg-bg-card shadow-sm text-foreground",
-        "p-4 sm:p-5 gap-3 max-w-full w-full transition-transform hover:-translate-y-0.5 hover:shadow-md",
+        "group flex min-h-[720px] flex-col overflow-hidden rounded-[26px] border border-border-card bg-bg-card text-foreground shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl",
         className
       )}
-      role="article"
       aria-label={`Produto: ${title}`}
     >
-      {/* Imagem */}
-      <div className="mb-2 sm:mb-3">
+      <div className="relative">
         <button
           type="button"
-          onClick={() => onSeeProductDetails?.()}
-          className="w-full overflow-hidden h-28 sm:h-32 md:h-40 flex items-center justify-center relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/40"
+          onClick={() => onSeeProductDetails?.(productId)}
+          className="relative block h-[220px] w-full overflow-hidden bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/40"
         >
           <Image
             src={imageUrl}
-            alt={title}
-            width={640}
-            height={640}
-            className="w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-            loading="lazy"
-            sizes="(min-width: 768px) 33vw, 80vw"
+            alt={imageAlt ?? title}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
           />
         </button>
-      </div>
 
-      {/* Título */}
-      <h3 className="text-sm sm:text-base md:text-lg font-semibold text-foreground uppercase tracking-tight mb-1 line-clamp-2">
-        {title}
-      </h3>
+        {tag ? (
+          <span className="absolute left-4 top-4 rounded-full bg-primary-500 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">
+            {tag}
+          </span>
+        ) : null}
 
-      {/* Avaliação */}
-      {typeof rating === "number" && (
-        <div className="mb-2">{renderStars(rating)}</div>
-      )}
-
-      {/* Preços */}
-      <div className="flex flex-col gap-1 mb-1">
-        {showDeal && !dealExpired ? (
-          <>
-            {effectiveDealPrice < price && (
-              <p className="text-xs sm:text-sm text-foreground/60 font-semibold line-through">
-                {formattedBasePrice}
-              </p>
-            )}
-            <p className="text-xl md:text-2xl font-extrabold text-foreground">
-              {formattedDealPrice}
-            </p>
-          </>
-        ) : (
-          <p className="text-xl md:text-2xl font-extrabold text-foreground">
-            {formattedBasePrice}
-          </p>
+        {(onFavorite || onShare) && (
+          <div className="absolute right-4 top-4 flex flex-col gap-2">
+            {onFavorite ? (
+              <button
+                type="button"
+                onClick={onFavorite}
+                aria-label={`Favoritar ${title}`}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/92 text-foreground shadow-sm"
+              >
+                <StarIcon size={18} weight="bold" />
+              </button>
+            ) : null}
+            {onShare ? (
+              <button
+                type="button"
+                onClick={onShare}
+                aria-label={`${shareLabel ?? "Compartilhar"} ${title}`}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/92 text-foreground shadow-sm"
+              >
+                <ShareNetworkIcon size={18} weight="bold" />
+              </button>
+            ) : null}
+          </div>
         )}
       </div>
 
-      {/* Parcelamento */}
-      {installments && installmentValue ? (
-        <p className="text-xs sm:text-sm text-foreground mb-2 sm:mb-3">
-          Em até {installments}x de {formatBRL(installmentValue)} sem juros
-        </p>
-      ) : (
-        <div className="mb-1 sm:mb-2" />
-      )}
-
-      {showDeal && (
-        <div
-          className="
-                inline-flex gap-2 rounded-md
-                 dark:text-primary-200
-                px-3 py-1.5 text-[11px] sm:text-xs font-semibold
-              "
-        >
-          <TimerIcon size={20} weight="bold" />
-          <span>Confira a disponibilidade com o vendedor</span>
-        </div>
-      )}
-
-      {/* Ações */}
-      <div className="flex flex-col gap-2 mt-auto">
-        <button
-          type="button"
-          onClick={onAddToCart}
-          disabled={showDeal ? dealExpired : false}
-          className={clsx(
-            "inline-flex items-center justify-center gap-2 rounded-md px-4 py-3",
-            "text-sm sm:text-base font-semibold transition",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300/60 cursor-pointer",
-            showDeal && dealExpired
-              ? "text-background cursor-not-allowed text-white"
-              : "bg-primary-500 text-white"
-          )}
-          aria-label={`${ctaLabel} - ${title}`}
-        >
-          {showDeal && dealExpired ? "Indisponível" : ctaLabel}
-        </button>
-
-        {shareLabel && onShare && (
+      <div className="flex flex-1 flex-col gap-4 p-5">
+        <div className="flex flex-col gap-2">
           <button
             type="button"
-            onClick={onShare}
-            className="
-            inline-flex items-center justify-between gap-2
-            rounded-md border border-foreground/15 px-4 py-3
-            text-sm sm:text-base font-semibold text-foreground
-            transition hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/40
-          "
-            aria-label={`${shareLabel} - ${title}`}
+            onClick={() => onSeeProductDetails?.(productId)}
+            className="text-left"
           >
-            <span>{shareLabel}</span>
-            <ShareNetworkIcon size={18} weight="bold" />
+            <span className="block text-2xl font-bold leading-tight text-foreground">
+              {title}
+            </span>
           </button>
-        )}
+
+          {subtitle ? (
+            <span className="text-sm font-semibold uppercase tracking-[0.04em] text-foreground/62">
+              {subtitle}
+            </span>
+          ) : null}
+        </div>
+
+        {metaItems?.length ? (
+          <div className="grid grid-cols-2 gap-3 text-sm text-foreground/78">
+            {metaItems.map((item) => (
+              <span key={item.label} className="inline-flex items-center gap-2">
+                <span className="text-secondary-600">
+                  {(item.icon as never) ?? <GaugeIcon size={18} weight="duotone" />}
+                </span>
+                <span>{item.label}</span>
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        {location ? (
+          <span className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+            <MapPinIcon size={18} weight="duotone" />
+            {location}
+          </span>
+        ) : null}
+
+        {variant === "default" && installments && installmentValue ? (
+          <span className="text-sm text-foreground/68">
+            Em até {installments}x de {formatBRL(installmentValue)}
+          </span>
+        ) : null}
+
+        <div className="mt-auto flex items-end justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            {formattedComparePrice ? (
+              <>
+                <span className="text-xs uppercase tracking-[0.16em] text-foreground/46">
+                  De
+                </span>
+                <span className="text-lg font-semibold text-foreground/42 line-through">
+                  {formattedComparePrice}
+                </span>
+              </>
+            ) : null}
+            <span className="text-xs uppercase tracking-[0.16em] text-secondary-700">
+              Por
+            </span>
+            <span className="text-3xl font-bold leading-none text-secondary-700">
+              {formattedPrice}
+            </span>
+          </div>
+
+          {variant === "vehicle" && !metaItems?.length ? (
+            <div className="hidden sm:flex sm:flex-col sm:items-end sm:text-right">
+              <span className="inline-flex items-center gap-2 text-sm text-foreground/60">
+                <CalendarIcon size={16} weight="duotone" />
+                Pronta entrega
+              </span>
+              <span className="inline-flex items-center gap-2 text-sm text-foreground/60">
+                <GearSixIcon size={16} weight="duotone" />
+                Laudo aprovado
+              </span>
+            </div>
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          onClick={onAddToCart ?? (() => onSeeProductDetails?.(productId))}
+          className={clsx(
+            "mt-2 inline-flex items-center justify-center rounded-xl border px-4 py-3 text-base font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300/60",
+            buttonVariant === "primary"
+              ? "border-primary-500 bg-primary-500 text-white hover:opacity-95"
+              : "border-primary-500 text-secondary-700 hover:bg-secondary-50",
+            ctaClassName
+          )}
+        >
+          {ctaLabel}
+        </button>
       </div>
-    </div>
+    </article>
   );
 }
 
 export type { ProductCardProps };
+export { CalendarIcon, GaugeIcon, GearSixIcon };

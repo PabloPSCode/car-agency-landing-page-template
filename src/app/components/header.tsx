@@ -1,125 +1,176 @@
 "use client";
-import type { Metadata } from "next";
-import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 
-import { useRouter } from "next/navigation";
+import { ArrowRightIcon } from "@phosphor-icons/react";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
+import type { ComponentType } from "react";
+import { useMemo, useState } from "react";
 import {
-  ItemsSearchList,
   LandingHeader,
   SearchInput,
 } from "../../libs/react-ultimate-components/src";
+import { sendMessageWhatsapp } from "../../utils/helpers";
 import { useStore } from "../providers/StoreProvider";
+import { Title } from "./ui/Typography";
 
-export const metadata: Metadata = {
-  title: "MostraLoja",
-  description: "Next.js 15 starter with TypeScript and TailwindCSS",
-};
+const SearchField = SearchInput as unknown as ComponentType<any>;
 
 export default function Header() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [search, setSearch] = useState("");
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const router = useRouter();
-  const { storeData, categories, products } = useStore();
+  const { storeData } = useStore();
 
-  const pathname = usePathname();
   const normalizedPathname = pathname.replace(/^\/sites\/[^/]+/, "") || "/";
+  const isHome = normalizedPathname === "/";
+  const whatsapp = storeData.contact?.whatsapp ?? "5531998710044";
 
-  const MIN_SEARCH_LENGTH = 3;
-
-  useEffect(() => {
-    setSearch("");
-  }, [pathname]);
+  const navigationItems = useMemo(
+    () => [
+      { label: "Início", href: "#inicio" },
+      { label: "Estoque", href: "/pesquisa/estoque" },
+      { label: "Marcas", href: "#marcas" },
+      { label: "Contato", href: "#contato" },
+    ],
+    [],
+  );
 
   const resolveHref = (href: string) => {
-    if (href.startsWith("#")) {
-      return normalizedPathname === "/" ? href : `/${href}`;
+    if (!href.startsWith("#")) return href;
+    return isHome ? href : `/${href}`;
+  };
+
+  const handleWhatsapp = () => {
+    sendMessageWhatsapp(
+      "Olá! Quero agendar uma avaliação no estoque da MonlevadeVeiculos.",
+      whatsapp,
+    );
+  };
+
+  const handleSearch = () => {
+    if (!search.trim()) {
+      router.push("/pesquisa/estoque");
+      setShowMobileMenu(false);
+      return;
     }
-    return href;
+
+    router.push(
+      `/pesquisa/estoque?search=${encodeURIComponent(search.trim())}`,
+    );
+    setShowMobileMenu(false);
   };
 
-  const handleToggleMobileMenu = () => {
-    setShowMobileMenu(!showMobileMenu);
+  const handleMobileToggle = (open: boolean) => {
+    setShowMobileMenu(open);
   };
-
-  const menuItems = categories.map((category) => {
-    const anchor = category.id ?? category.slug ?? category.name;
-    return {
-      label: category.name,
-      name: category.name,
-      href: `#${anchor}`,
-      target: "_self",
-    };
-  });
-  const logoUrl = storeData.store.companyLogoUrl || "/lets_encrypt.png";
 
   return (
     <LandingHeader.Root
-      className="relative bg-background shadow-sm z-90"
+      bordered
+      className="bg-white min-h-[72px] backdrop-blur"
       size="lg"
-      bordered={false}
       sticky
-      style={{ zIndex: 9999 }}
+      style={{ zIndex: 60 }}
     >
       <LandingHeader.Left className="flex items-center">
-        <div
-          className="flex items-center"
-          role="button"
+        <button
+          type="button"
+          className="flex items-center text-left gap-3 mt-4 md:mt-0"
           onClick={() => router.push("/")}
         >
           <Image
-            src={logoUrl}
-            alt={storeData.store.name || "MostraLoja"}
-            width={612}
-            height={408}
-            className="h-12 w-auto sm:h-14 md:h-16 max-w-[120px] max-h-[40px] object-contain"
+            src="/logo.png"
+            alt="Logo da MonlevadeVeiculos"
+            width={160}
+            height={160}
+            className="w-8 h-8 sm:w-10 sm:h-10"
             quality={100}
-            priority
           />
-        </div>
+          <Title as="span" size="md" className="text-[1.6rem] text-foreground">
+            Monlevade<span className="text-secondary-700">Veiculos</span>
+          </Title>
+        </button>
       </LandingHeader.Left>
 
-      <div className="flex flex-col flex-1 items-center justify-center mx-4 relative">
-        {/* @ts-ignore */}
-        <SearchInput
-          search={search}
-          setSearch={(e) => setSearch(e)}
-          placeholder="Pesquise um produto"
-          variant="button-highlight"
+      <LandingHeader.Center className="hidden md:flex">
+        <LandingHeader.Nav className="justify-center">
+          {navigationItems.map((item) => (
+            <LandingHeader.Nav.Item
+              key={item.label}
+              href={resolveHref(item.href)}
+            >
+              {item.label}
+            </LandingHeader.Nav.Item>
+          ))}
+        </LandingHeader.Nav>
+      </LandingHeader.Center>
+
+      <LandingHeader.Right className="flex items-center gap-3">
+        <div className="hidden lg:flex lg:flex-col lg:items-end">
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground/45">
+            Atendimento
+          </span>
+          <span className="text-sm font-semibold text-foreground">
+            {storeData.contact?.phone}
+          </span>
+        </div>
+
+        <LandingHeader.CTA
+          className="hidden md:inline-flex"
+          label="Agendar avaliação"
+          onClick={handleWhatsapp}
         />
-        {search.length >= MIN_SEARCH_LENGTH && (
-          <ItemsSearchList
-            searchTerm={search}
-            className="absolute bottom-[-160px] left-0"
-            items={products as never}
-            onItemClick={() => setSearch("")}
-          />
-        )}
-      </div>
-      <LandingHeader.Right className="flex items-center gap-6">
+
         <LandingHeader.MobileMenuToggle
           open={showMobileMenu}
-          onToggle={handleToggleMobileMenu}
+          onToggle={handleMobileToggle as never}
         />
       </LandingHeader.Right>
-      <LandingHeader.MobileMenuPanel open={showMobileMenu}>
-        <h2 className="text-lg sm:text-xl font-black uppercase text-foreground">
-          Compre por categoria
-        </h2>
-        {menuItems.map((item) => (
+
+      <LandingHeader.MobileMenuPanel
+        open={showMobileMenu}
+        cta={
+          <LandingHeader.CTA
+            className="w-full justify-center"
+            label="Falar no WhatsApp"
+            onClick={handleWhatsapp}
+          />
+        }
+      >
+        <li className="mb-4 w-full">
+          <form
+            className="w-full"
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleSearch();
+            }}
+          >
+            <SearchField
+              search={search}
+              setSearch={setSearch}
+              placeholder="Busque marca, modelo ou carroceria"
+              variant="button-highlight"
+            />
+          </form>
+        </li>
+
+        {navigationItems.map((item) => (
           <li
-            key={item.name}
-            className="inline-block"
-            onClick={handleToggleMobileMenu}
+            key={item.label}
+            className="w-full"
+            onClick={() => setShowMobileMenu(false)}
           >
             <a
               href={resolveHref(item.href)}
-              target={item.target}
-              rel={item.target === "_blank" ? "noopener noreferrer" : undefined}
-              className="text-sm sm:text-base"
+              className="flex items-center justify-between rounded-xl border border-border-card bg-white px-4 py-3 text-sm font-semibold text-foreground"
             >
               {item.label}
+              <ArrowRightIcon
+                size={16}
+                weight="bold"
+                className="text-secondary-700"
+              />
             </a>
           </li>
         ))}

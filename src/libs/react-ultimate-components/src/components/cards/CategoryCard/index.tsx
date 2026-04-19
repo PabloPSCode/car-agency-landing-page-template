@@ -2,7 +2,6 @@
 
 import { Icon } from "@iconify/react";
 import clsx from "clsx";
-import Image from "next/image";
 
 export interface CategoryCardProps {
   /** Nome da categoria exibida no card. */
@@ -11,12 +10,20 @@ export interface CategoryCardProps {
   onSeeCategory: () => void;
   /** URL da imagem apresentada no card. */
   imgUrl?: string;
+  /** Ícone renderizado diretamente no card. */
+  icon?: unknown;
   /** Nome do ícone (Solar) exibido quando nenhuma imagem é enviada. */
   iconName?: string;
   /** Cor do ícone (Solar) exibido quando nenhuma imagem é enviada. */
   iconColor?: string;
   /** Classes extras aplicadas ao contêiner externo. */
   className?: string;
+  /** Classes extras aplicadas ao bloco de mídia. */
+  mediaClassName?: string;
+  /** Classes extras aplicadas ao título. */
+  labelClassName?: string;
+  /** Texto auxiliar opcional. */
+  description?: string;
   /** Abre o link em uma nova aba (opcional). */
   newTab?: boolean;
 }
@@ -31,10 +38,13 @@ export default function CategoryCard({
   name,
   onSeeCategory,
   imgUrl,
+  icon,
   iconName,
   iconColor,
   className,
-  newTab,
+  mediaClassName,
+  labelClassName,
+  description,
 }: CategoryCardProps) {
   const resolvedIconName = iconName?.startsWith("solar:")
     ? iconName
@@ -43,44 +53,57 @@ export default function CategoryCard({
     : undefined;
 
   const media = imgUrl ? (
-    <Image
+    <img
       src={imgUrl}
       alt={name}
-      width={96}
-      height={96}
-      className="h-full w-full rounded-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+      className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-[1.03]"
       loading="lazy"
-      sizes="(min-width: 768px) 96px, (min-width: 640px) 80px, 64px"
     />
+  ) : icon ? (
+    <div className="text-primary-600">{icon as never}</div>
   ) : resolvedIconName ? (
     <Icon
       icon={resolvedIconName}
       className={clsx(
         iconColor
-          ? `text-${iconColor} "h-8 w-8 sm:h-10 sm:w-10"`
+          ? `text-${iconColor} h-8 w-8 sm:h-10 sm:w-10`
           : "h-8 w-8 sm:h-10 sm:w-10"
       )}
     />
   ) : null;
 
   return (
-    <div
-      role="button"
-      rel={newTab ? "noopener noreferrer" : undefined}
+    <button
+      type="button"
       className={clsx(
-        "group flex flex-col items-center gap-3 rounded-xl border border-border-card bg-bg-card p-4 sm:p-5 shadow-sm text-foreground",
+        "group flex min-h-[122px] flex-col items-center justify-center gap-3 rounded-2xl border border-border-card bg-bg-card p-4 text-foreground shadow-sm",
         "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/40",
         className
       )}
       aria-label={`Ver categoria ${name}`}
       onClick={onSeeCategory}
     >
-      <div className="flex h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 items-center justify-center overflow-hidden rounded-full  bg-gray-200 text-primary-600 dark:text-primary-400 text-2xl sm:text-3xl transition-colors ">
+      <div
+        className={clsx(
+          "flex h-12 w-full max-w-[108px] items-center justify-center overflow-hidden rounded-xl p-2 text-primary-600 transition-colors",
+          mediaClassName
+        )}
+      >
         {media}
       </div>
-      <span className="text-sm sm:text-base font-semibold text-primary-600 dark:text-primary-400 text-center leading-tight line-clamp-2">
+      <span
+        className={clsx(
+          "text-center text-sm font-semibold uppercase leading-tight text-foreground sm:text-base",
+          labelClassName
+        )}
+      >
         {name}
       </span>
-    </div>
+      {description ? (
+        <span className="text-center text-xs leading-5 text-foreground/62">
+          {description}
+        </span>
+      ) : null}
+    </button>
   );
 }
