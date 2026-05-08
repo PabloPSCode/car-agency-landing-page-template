@@ -9,13 +9,12 @@ import {
   PhoneCallIcon,
   ShieldCheckIcon,
 } from "@phosphor-icons/react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  BannerCarousel,
   CategoryCard,
   ProductCard,
 } from "../libs/react-ultimate-components/src";
+import VideoSection from "../libs/react-ultimate-components/src/components/elements/VideoSection";
 import { formatKmRodage, formatPublishingDate } from "../utils/car";
 import { sendMessageWhatsapp } from "../utils/helpers";
 import BodyTypeIcon from "./components/BodyTypeIcon";
@@ -24,9 +23,10 @@ import {
   RevealContainer,
   ZoomContainer,
 } from "./components/ui/Animations";
-import { HeroSection, Section } from "./components/ui/Section";
+import { Section } from "./components/ui/Section";
 import { Paragraph, Subtitle, Title } from "./components/ui/Typography";
 import { useStore } from "./providers/StoreProvider";
+import Button from "react-ultimate-components/src/components/buttons/Button";
 
 export default function Home() {
   const router = useRouter();
@@ -36,60 +36,55 @@ export default function Home() {
   const latestCars = cars.slice(0, 6);
   const whatsapp = storeData.contact?.whatsapp ?? "5531998710044";
 
-  const heroSlides = heroBanners.map((banner) => (
-    <div
-      key={banner.id}
-      className="relative min-h-[70vh] overflow-hidden bg-[#0f1724]"
-    >
-      <Image
-        src={banner.imageUrl}
-        alt={banner.title}
-        fill
-        className="object-cover opacity-75 brightness-150"
-        priority={banner.id === heroBanners[0]?.id}
-        sizes="100vw"
-      />
-      <div className="absolute inset-0 " />
-      <div className="relative z-10 flex min-h-[70vh] items-center">
-        <div className="w-3/4 sm:w-full flex justify-center mx-auto">
-          <div className="max-w-7xl -mt-32">
-            <Title
-              as="div"
-              size="hero"
-              className="mt-6 max-w-5xl text-white bg-[linear-gradient(120deg,rgba(15,23,36,0.4),rgba(15,23,36,0.2),rgba(15,23,36,0.2))] p-8 rounded-lg"
-            >
-              {banner.title}
-            </Title>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => router.push(banner.ctaHref)}
-                className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-5 py-3 text-base font-semibold text-white"
-              >
-                {banner.ctaLabel}
-                <ArrowRightIcon size={18} weight="bold" />
-              </button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  ));
+  function scrollToSection(sectionId: string) {
+    document.getElementById(sectionId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
 
   return (
     <main id="inicio" className="min-h-screen bg-background text-foreground">
-      <HeroSection>
-        <ZoomContainer once delay={100}>
-          <BannerCarousel
-            items={heroSlides}
-            loop
-            showDots
-            showNavigation
-            className="overflow-hidden"
-          />
-        </ZoomContainer>
-      </HeroSection>
+      <section className="relative overflow-hidden ">
+        <div className="pointer-events-none absolute inset-0 z-20 bg-gradient-to-r from-secondary-900 via-secondary-800/50 to-secondary-100/20 flex flex-col items-center justify-center" />
+        <VideoSection
+          size="full"
+          videoUrl="/videos/video.mp4"
+          showPlayPauseButton={false}
+          showOverlay
+          containerClassName="!min-h-[82vh] bg-transparent"
+        />
+      </section>
+
+      <div className="absolute inset-0 z-30 flex flex-col items-center justify-center h-full">
+        <div className="mx-auto my-auto min-h-[95vh] flex w-full max-w-7xl items-center justify-center2 px-6 pb-16 lg:px-8">
+          <RevealContainer
+            once
+            className="pointer-events-auto m-auto space-y-8"
+          >
+            <Title
+              as="h1"
+              className="max-w-[70vw] sm:max-w-[50vw]  xl:max-w-[50vw] text-center !text-3xl leading-[0.96] tracking-[-0.05em] text-white sm:!text-5xl mt-12"
+            >
+              Buscando seu próximo carro? Encontre aqui o seminovo ideal para
+              você.
+            </Title>
+
+            <FadeContainer
+              once
+              className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
+            >
+              <Button
+                type="button"
+                label="Ver estoque"
+                onClick={() => scrollToSection("estoque")}
+                className="!rounded-full !bg-secondary-500 !px-8 !py-4 !text-white !shadow-none"
+              />
+            </FadeContainer>
+          </RevealContainer>
+        </div>
+      </div>
+
 
       <Section id="marcas" className="pt-6">
         <RevealContainer once>
@@ -97,9 +92,7 @@ export default function Home() {
             <Title as="div" size="lg">
               Busque pela marca
             </Title>
-            <Subtitle as="div">
-              Trabalhamos com todas as marcas.
-            </Subtitle>
+            <Subtitle as="div">Trabalhamos com todas as marcas.</Subtitle>
           </div>
         </RevealContainer>
 
@@ -127,7 +120,8 @@ export default function Home() {
               Busque pelo tipo de carroceria
             </Title>
             <Subtitle as="div">
-              Hatch, sedan, SUV, picape e utilitário organizados em cards rápidos.
+              Hatch, sedan, SUV, picape e utilitário organizados em cards
+              rápidos.
             </Subtitle>
           </div>
         </RevealContainer>
@@ -162,7 +156,8 @@ export default function Home() {
               Seminovos em destaque
             </Title>
             <Subtitle as="div">
-              Cards com layout de vitrine, quilometragem, câmbio, localização e preço.
+              Cards com layout de vitrine, quilometragem, câmbio, localização e
+              preço.
             </Subtitle>
           </div>
 
@@ -209,7 +204,7 @@ export default function Home() {
                 onShare={() =>
                   sendMessageWhatsapp(
                     `Olá! Quero receber mais informações sobre o veículo ${car.name}.`,
-                    whatsapp
+                    whatsapp,
                   )
                 }
               />
@@ -293,7 +288,7 @@ export default function Home() {
                 onAddToCart={() =>
                   sendMessageWhatsapp(
                     `Olá! Tenho interesse em negociar o veículo ${car.name}.`,
-                    whatsapp
+                    whatsapp,
                   )
                 }
                 onSeeProductDetails={() => router.push(`/produto/${car.slug}`)}
