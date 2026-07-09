@@ -10,6 +10,7 @@ import {
   ShieldCheckIcon,
 } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
+import Button from "react-ultimate-components/src/components/buttons/Button";
 import {
   CategoryCard,
   ProductCard,
@@ -17,7 +18,6 @@ import {
 import VideoSection from "../libs/react-ultimate-components/src/components/elements/VideoSection";
 import { formatKmRodage, formatPublishingDate } from "../utils/car";
 import { sendMessageWhatsapp } from "../utils/helpers";
-import BodyTypeIcon from "./components/BodyTypeIcon";
 import {
   FadeContainer,
   RevealContainer,
@@ -26,11 +26,10 @@ import {
 import { Section } from "./components/ui/Section";
 import { Paragraph, Subtitle, Title } from "./components/ui/Typography";
 import { useStore } from "./providers/StoreProvider";
-import Button from "react-ultimate-components/src/components/buttons/Button";
 
 export default function Home() {
   const router = useRouter();
-  const { brandCategories, bodyTypeCategories, cars, heroBanners, storeData } =
+  const { brandCategories, bodyTypeCategories, cars, storeData } =
     useStore();
   const featuredCars = cars.filter((car) => car.featured).slice(0, 4);
   const latestCars = cars.slice(0, 6);
@@ -52,7 +51,7 @@ export default function Home() {
           videoUrl="/videos/video.mp4"
           showPlayPauseButton={false}
           showOverlay
-          containerClassName="!min-h-[82vh] bg-transparent"
+          containerClassName="!min-h-[70vh] bg-transparent"
         />
       </section>
 
@@ -77,14 +76,13 @@ export default function Home() {
               <Button
                 type="button"
                 label="Ver estoque"
-                onClick={() => scrollToSection("estoque")}
+                onClick={() => router.push("/pesquisa/estoque")}
                 className="!rounded-full !bg-secondary-500 !px-8 !py-4 !text-white !shadow-none"
               />
             </FadeContainer>
           </RevealContainer>
         </div>
       </div>
-
 
       <Section id="marcas" className="pt-6">
         <RevealContainer once>
@@ -132,16 +130,12 @@ export default function Home() {
               <CategoryCard
                 name={bodyType.name}
                 description={bodyType.description}
-                icon={
-                  <BodyTypeIcon
-                    iconKey={bodyType.iconKey}
-                    className="h-9 w-9 text-secondary-700"
-                  />
-                }
+                imgUrl={bodyType.imageUrl}
+                imageFit="cover"
                 onSeeCategory={() =>
                   router.push(`/pesquisa/estoque?carroceria=${bodyType.slug}`)
                 }
-                mediaClassName="max-w-[84px] bg-secondary-50"
+                mediaClassName="bg-secondary-50"
                 labelClassName="text-foreground"
               />
             </RevealContainer>

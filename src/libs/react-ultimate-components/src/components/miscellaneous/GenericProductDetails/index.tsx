@@ -4,10 +4,12 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   ShoppingCartIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import Image from "next/image";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   FacebookIcon,
   FacebookShareButton,
@@ -46,6 +48,8 @@ export interface GenericProductDetailsProps {
   /** Classes extras aplicadas a TODOS os thumbnails. */
   thumbClassName?: string;
   showHelperText?: boolean;
+  /** Habilita a visualização da imagem atual em modal de tela cheia. */
+  enableFullscreen?: boolean;
   /** Callback acionado ao clicar em “Adicionar ao carrinho”. */
   onAddToCart?: (product: Product) => void;
   /** Callback acionado ao compartilhar o produto. */
@@ -58,6 +62,7 @@ export default function GenericProductDetails({
   mainImageClassName,
   thumbClassName,
   showHelperText = true,
+  enableFullscreen = true,
   onAddToCart,
   onShare,
 }: GenericProductDetailsProps) {
@@ -67,6 +72,8 @@ export default function GenericProductDetails({
   );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [origin, setOrigin] = useState<string>("50% 50%");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const current = safeImages[currentIndex];
 
   // Atualiza índice caso a lista mude
@@ -74,13 +81,42 @@ export default function GenericProductDetails({
     if (currentIndex > safeImages.length - 1) setCurrentIndex(0);
   }, [safeImages, currentIndex]);
 
-  if (!safeImages.length) return null;
+  // O portal só existe no cliente; evita divergência na hidratação.
+  useEffect(() => setIsMounted(true), []);
 
   // --- Navegação
-  const goPrev = () =>
-    setCurrentIndex((i) => (i === 0 ? safeImages.length - 1 : i - 1));
-  const goNext = () =>
-    setCurrentIndex((i) => (i === safeImages.length - 1 ? 0 : i + 1));
+  const goPrev = useCallback(
+    () => setCurrentIndex((i) => (i === 0 ? safeImages.length - 1 : i - 1)),
+    [safeImages.length]
+  );
+  const goNext = useCallback(
+    () => setCurrentIndex((i) => (i === safeImages.length - 1 ? 0 : i + 1)),
+    [safeImages.length]
+  );
+
+  const closeFullscreen = useCallback(() => setIsFullscreen(false), []);
+
+  // Atalhos de teclado e bloqueio do scroll enquanto o modal está aberto.
+  useEffect(() => {
+    if (!isFullscreen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeFullscreen();
+      if (event.key === "ArrowLeft") goPrev();
+      if (event.key === "ArrowRight") goNext();
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isFullscreen, closeFullscreen, goPrev, goNext]);
+
+  if (!safeImages.length) return null;
 
   const handleMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -208,9 +244,26 @@ export default function GenericProductDetails({
             {/* Wrapper do zoom */}
             <div
               className={clsx(
-                "group relative h-full w-full cursor-zoom-in select-none"
+                "group relative h-full w-full select-none",
+                enableFullscreen ? "cursor-zoom-in" : "cursor-default"
               )}
               onMouseMove={handleMove}
+              onClick={enableFullscreen ? () => setIsFullscreen(true) : undefined}
+              onKeyDown={
+                enableFullscreen
+                  ? (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setIsFullscreen(true);
+                      }
+                    }
+                  : undefined
+              }
+              role={enableFullscreen ? "button" : undefined}
+              tabIndex={enableFullscreen ? 0 : undefined}
+              aria-label={
+                enableFullscreen ? "Ampliar imagem em tela cheia" : undefined
+              }
             >
               <Image
                 src={current.src}
@@ -219,7 +272,7 @@ export default function GenericProductDetails({
                 sizes="(min-width: 1024px) 60vw, 100vw"
                 style={{ transformOrigin: origin }}
                 className={clsx(
-                  "h-full w-full object-contain transition-transform duration-200 ease-out cursor-zoom-out",
+                  "h-full w-full object-contain transition-transform duration-200 ease-out",
                   "group-hover:scale-[1.5]",
                   mainImageClassName
                 )}
@@ -290,6 +343,102 @@ export default function GenericProductDetails({
           </div>
         </div>
       </div>
+
+      {/* Modal de tela cheia — renderizado via portal para escapar de
+          ancestrais com `transform`, que criariam um containing block
+          e quebrariam o posicionamento `fixed` do overlay. */}
+      {enableFullscreen &&
+        isFullscreen &&
+        isMounted &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={current.alt ?? "Imagem em tela cheia"}
+            onClick={closeFullscreen}
+            className={clsx(
+              "fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8",
+              "bg-black/80 backdrop-blur-sm"
+            )}
+          >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                closeFullscreen();
+              }}
+              aria-label="Fechar tela cheia"
+              autoFocus
+              className={clsx(
+                "absolute right-4 top-4 z-10 inline-flex items-center justify-center rounded-full p-2",
+                "bg-white/10 text-white transition hover:bg-white/20",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              )}
+            >
+              <XIcon weight="bold" className="h-6 w-6" />
+            </button>
+
+            {safeImages.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goPrev();
+                  }}
+                  aria-label="Imagem anterior"
+                  className={clsx(
+                    "absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:left-6",
+                    "inline-flex items-center justify-center rounded-full p-3",
+                    "bg-white/10 text-white transition hover:bg-white/20",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                  )}
+                >
+                  <ArrowLeftIcon weight="bold" className="h-6 w-6" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goNext();
+                  }}
+                  aria-label="Próxima imagem"
+                  className={clsx(
+                    "absolute right-2 top-1/2 z-10 -translate-y-1/2 sm:right-6",
+                    "inline-flex items-center justify-center rounded-full p-3",
+                    "bg-white/10 text-white transition hover:bg-white/20",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                  )}
+                >
+                  <ArrowRightIcon weight="bold" className="h-6 w-6" />
+                </button>
+              </>
+            )}
+
+            {/* Clicar na imagem não deve fechar o modal. */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative h-full w-full max-w-6xl"
+            >
+              <Image
+                src={current.src}
+                alt={current.alt ?? `Imagem ${currentIndex + 1}`}
+                fill
+                sizes="100vw"
+                priority
+                className="object-contain"
+              />
+            </div>
+
+            {safeImages.length > 1 && (
+              <span className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white">
+                {`${currentIndex + 1}/${safeImages.length}`}
+              </span>
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

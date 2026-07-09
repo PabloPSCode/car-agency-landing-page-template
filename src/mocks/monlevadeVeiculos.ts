@@ -123,12 +123,15 @@ export const brandCategories: BrandCategory[] = [
   },
 ];
 
+const buildCategoryImage = (slug: string) => `/images/categories/${slug}.webp`;
+
 export const bodyTypeCategories: BodyTypeCategory[] = [
   {
     id: "hatch",
     name: "Hatch",
     slug: "hatch",
     iconKey: "hatch",
+    imageUrl: buildCategoryImage("hatch"),
     description: "Modelos compactos para o dia a dia urbano.",
   },
   {
@@ -136,6 +139,7 @@ export const bodyTypeCategories: BodyTypeCategory[] = [
     name: "Sedan",
     slug: "sedan",
     iconKey: "sedan",
+    imageUrl: buildCategoryImage("sedan"),
     description: "Mais porta-malas e conforto para estrada.",
   },
   {
@@ -143,6 +147,7 @@ export const bodyTypeCategories: BodyTypeCategory[] = [
     name: "SUV",
     slug: "suv",
     iconKey: "suv",
+    imageUrl: buildCategoryImage("suv"),
     description: "Altura elevada, presença e tecnologia.",
   },
   {
@@ -150,6 +155,7 @@ export const bodyTypeCategories: BodyTypeCategory[] = [
     name: "Picape",
     slug: "picape",
     iconKey: "picape",
+    imageUrl: buildCategoryImage("picape"),
     description: "Força de trabalho e lazer no mesmo veículo.",
   },
   {
@@ -157,6 +163,7 @@ export const bodyTypeCategories: BodyTypeCategory[] = [
     name: "Utilitário",
     slug: "utilitario",
     iconKey: "utilitario",
+    imageUrl: buildCategoryImage("utilitario"),
     description: "Espaço interno para operação e entrega.",
   },
   {
@@ -164,6 +171,7 @@ export const bodyTypeCategories: BodyTypeCategory[] = [
     name: "Elétrico",
     slug: "eletrico",
     iconKey: "eletrico",
+    imageUrl: buildCategoryImage("eletrico"),
     description: "Eficiência com condução silenciosa.",
   },
 ];

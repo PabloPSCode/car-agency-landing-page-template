@@ -4,9 +4,14 @@ import { getThemeColor } from "../../../utils/colors";
 import clsx from "clsx";
 import type { SliderProps } from "rc-slider";
 import Slider from "rc-slider";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 type Pair = [number, number];
+
+const DEFAULT_THEME_COLORS = {
+  primary500: "#2563eb",
+  primary600: "#1d4ed8",
+};
 
 export interface IntervalSliderInputProps {
   /** Rótulo exibido acima do controle. */
@@ -79,8 +84,18 @@ export default function IntervalSliderInput({
   ...rest
 }: IntervalSliderInputProps) {
   // ======= Cores do tema =======
-  const primary500 = getThemeColor("--color-primary-500") ?? "#2563eb";
-  const primary600 = getThemeColor("--color-primary-600") ?? "#1d4ed8";
+  // Resolvidas após a montagem: `getComputedStyle` exige DOM, e ler durante o
+  // render causaria divergência de hidratação com o HTML do servidor.
+  const [themeColors, setThemeColors] = useState(DEFAULT_THEME_COLORS);
+
+  useEffect(() => {
+    setThemeColors({
+      primary500: getThemeColor("--color-primary-500", DEFAULT_THEME_COLORS.primary500),
+      primary600: getThemeColor("--color-primary-600", DEFAULT_THEME_COLORS.primary600),
+    });
+  }, []);
+
+  const { primary500, primary600 } = themeColors;
 
   // ======= Estado inicial =======
   const initial: Pair = useMemo(() => {

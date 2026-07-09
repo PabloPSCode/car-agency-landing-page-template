@@ -10,6 +10,8 @@ export interface CategoryCardProps {
   onSeeCategory: () => void;
   /** URL da imagem apresentada no card. */
   imgUrl?: string;
+  /** Ajuste da imagem: `contain` para logos, `cover` para fotos. */
+  imageFit?: "contain" | "cover";
   /** Ícone renderizado diretamente no card. */
   icon?: unknown;
   /** Nome do ícone (Solar) exibido quando nenhuma imagem é enviada. */
@@ -38,6 +40,7 @@ export default function CategoryCard({
   name,
   onSeeCategory,
   imgUrl,
+  imageFit = "contain",
   icon,
   iconName,
   iconColor,
@@ -52,11 +55,16 @@ export default function CategoryCard({
     ? `solar:${iconName}`
     : undefined;
 
+  const isPhoto = Boolean(imgUrl) && imageFit === "cover";
+
   const media = imgUrl ? (
     <img
       src={imgUrl}
       alt={name}
-      className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-[1.03]"
+      className={clsx(
+        "h-full w-full transition-transform duration-200 group-hover:scale-[1.03]",
+        isPhoto ? "object-cover" : "object-contain"
+      )}
       loading="lazy"
     />
   ) : icon ? (
@@ -76,7 +84,7 @@ export default function CategoryCard({
     <button
       type="button"
       className={clsx(
-        "group flex min-h-[122px] flex-col items-center justify-center gap-3 rounded-2xl border border-border-card bg-bg-card p-4 text-foreground shadow-sm",
+        "w-full group flex min-h-[122px] flex-col items-center justify-center gap-3 rounded-2xl border border-border-card bg-bg-card p-4 text-foreground shadow-sm",
         "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/40",
         className
       )}
@@ -85,7 +93,8 @@ export default function CategoryCard({
     >
       <div
         className={clsx(
-          "flex h-12 w-full max-w-[108px] items-center justify-center overflow-hidden rounded-xl p-2 text-primary-600 transition-colors",
+          "flex w-full items-center justify-center overflow-hidden rounded-xl text-primary-600 transition-colors",
+          isPhoto ? "aspect-[16/10]" : "h-12 max-w-[108px] p-2",
           mediaClassName
         )}
       >

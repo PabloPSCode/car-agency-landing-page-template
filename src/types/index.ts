@@ -163,6 +163,8 @@ export interface BodyTypeCategory {
   name: string;
   slug: string;
   iconKey: BodyTypeIconKey;
+  /** Foto representativa da carroceria, servida de `public/images/categories`. */
+  imageUrl: string;
   description: string;
 }
 
